@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="container mt-4">
+    <h2 class="fw-bold">Hello, {{ username }} 👋</h2>
+    <p class="text-muted">Manage your books below</p>
+
+    <a href="/add" class="btn btn-primary mb-3">+ Add New Book</a>
+
+    <div class="row">
+        {% for book in books %}
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+               <img src="https://picsum.photos/400/200?random={{ loop.index }}" class="card-img-top" alt="Book Image">
+
+
+                <div class="card-body">
+                    <h5 class="card-title">{{ book[1] }}</h5>
+                    <p class="card-text text-muted">{{ book[2] }}</p>
+
+                    <a href="/edit/{{ book[0] }}" class="btn btn-warning btn-sm">Edit</a>
+                    <a href="/delete/{{ book[0] }}" class="btn btn-danger btn-sm">Delete</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+{% endblock %}

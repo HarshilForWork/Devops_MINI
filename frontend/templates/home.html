@@ -1,0 +1,50 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<!-- HERO SECTION -->
+<div class="hero-section text-center d-flex align-items-center justify-content-center">
+    <div class="overlay"></div>
+
+    <div class="hero-content">
+        <h1 class="display-4 fw-bold text-light">Manage Your Books Smartly</h1>
+        <p class="lead text-light mt-3">
+            BookManager helps you organize, store, and manage your personal library online —  
+            simple, clean, and accessible anywhere.
+        </p>
+
+        <a href="/signup" class="btn btn-primary btn-lg mt-3">Get Started</a>
+        <a href="/login" class="btn btn-outline-light btn-lg mt-3 ms-3">Login</a>
+    </div>
+</div>
+
+<!-- FEATURE SECTION -->
+<div class="container mt-5">
+    <h2 class="text-center fw-bold mb-4">Why Use BookManager?</h2>
+
+    <div class="row">
+        <div class="col-md-4 text-center">
+            <h4>📚 Organize Your Library</h4>
+            <p class="text-muted">Add, edit and track all your books in one clean dashboard.</p>
+        </div>
+        <div class="col-md-4 text-center">
+            <h4>🔐 Secure Login</h4>
+            <p class="text-muted">Your data is tied to your account and safely stored.</p>
+        </div>
+        <div class="col-md-4 text-center">
+            <h4>🌐 Access Anywhere</h4>
+            <p class="text-muted">Your books stay synced and available across any device.</p>
+        </div>
+    </div>
+</div>
+
+<!-- BOTTOM SECTION -->
+<div class="container mt-5 mb-5">
+    <div class="p-4 bg-light rounded shadow-sm">
+        <h4 class="fw-bold text-center">A Minimal & Modern Book Management App</h4>
+        <p class="text-center text-muted mb-0">
+            Designed for simplicity, perfect for learning the DevOps pipeline.
+        </p>
+    </div>
+</div>
+
+{% endblock %}

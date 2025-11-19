@@ -1,0 +1,34 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="container mt-5" style="max-width: 450px;">
+    <div class="card shadow">
+        <div class="card-body">
+            <h3 class="text-center fw-bold">Login</h3>
+
+            {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
+
+            <form method="POST">
+                <div class="mb-3">
+                    <label>Email</label>
+                    <input type="email" class="form-control" name="email" required>
+                </div>
+
+                <div class="mb-3">
+                    <label>Password</label>
+                    <input type="password" class="form-control" name="password" required>
+                </div>
+
+                <button class="btn btn-primary w-100">Login</button>
+
+                <p class="text-center mt-3">
+                    New here? <a href="/signup">Create an account</a>
+                </p>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

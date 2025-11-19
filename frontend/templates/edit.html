@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class="container mt-5" style="max-width: 500px;">
+    <div class="card shadow">
+        <div class="card-body">
+            <h3>Edit Book</h3>
+
+            <form method="POST">
+                <div class="mb-3">
+                    <label>Title</label>
+                    <input type="text" class="form-control" name="title" value="{{ book[1] }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label>Author</label>
+                    <input type="text" class="form-control" name="author" value="{{ book[2] }}" required>
+                </div>
+
+                <button class="btn btn-success w-100">Update</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
