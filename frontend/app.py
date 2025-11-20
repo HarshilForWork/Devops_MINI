@@ -66,7 +66,7 @@ def logout():
 # ---------------- DASHBOARD (USER BOOKS) ----------------
 @app.route("/dashboard")
 def dashboard():
-    if "user_id" not in session:
+        if "user_id" not in session:
         return redirect("/login")
 
     uid = session["user_id"]
