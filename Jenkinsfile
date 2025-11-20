@@ -78,12 +78,17 @@ pipeline {
                 echo 'Deploying Application to App VM...'
                 sh """
                     gcloud compute ssh ${APP_VM} --zone=${GCP_ZONE} --command="
-                        sudo usermod -aG docker \$USER
+                        # FIX: Grant immediate Docker permission to the current user
+                        sudo chmod 666 /var/run/docker.sock
+                        
                         gcloud auth configure-docker gcr.io --quiet
                         docker pull ${APP_IMAGE}:latest
+                        
+                        # Stop any existing container
                         docker stop book_app || true
                         docker rm book_app || true
                         
+                        # Run the new container
                         docker run -d --name book_app --restart always \
                           -p 5000:5000 \
                           -e MYSQL_HOST=${DB_INTERNAL_IP} \
