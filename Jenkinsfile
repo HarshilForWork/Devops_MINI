@@ -30,14 +30,18 @@ pipeline {
             steps {
                 script {
                     echo 'Running SonarQube code quality scan...'
+                    // This pulls the tool "SonarQubeScanner" you just configured in Jenkins > Tools
+                    def scannerHome = tool 'SonarQubeScanner' 
+                    
                     // "sonar-server" matches the name we configured in Jenkins System settings
                     withSonarQubeEnv('sonar-server') {
-                        sh '''
-                            /var/lib/jenkins/tools/hudson.plugins.sonar.SonarRunnerInstallation/SonarQubeScanner/bin/sonar-scanner \
+                        sh """
+                            ${scannerHome}/bin/sonar-scanner \
                               -Dsonar.projectKey=book-manager \
                               -Dsonar.sources=. \
-                              -Dsonar.host.url=http://localhost:9000
-                        '''
+                              -Dsonar.host.url=http://localhost:9000 \
+                              -Dsonar.login=${sonar-token}
+                        """
                     }
                 }
             }
@@ -78,6 +82,7 @@ pipeline {
                         docker stop book_app || true
                         docker rm book_app || true
                         
+                        # We pass the Database Internal IP here so the App can connect
                         docker run -d --name book_app --restart always \
                           -p 5000:5000 \
                           -e MYSQL_HOST=${DB_INTERNAL_IP} \
