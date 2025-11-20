@@ -31,7 +31,11 @@
 
 ```bash
 # Set your project
-gcloud config set project YOUR_PROJECT_ID
+gcloud config set project cosmic-slate-469618-h1
+
+# Configure git remote (if not already done)
+git remote add origin github-personal:HarshilForWork/Devops_MINI.git
+git remote -v
 
 # Create VPCs and firewall rules
 gcloud compute firewall-rules create allow-jenkins \
@@ -52,7 +56,7 @@ gcloud compute firewall-rules create allow-mysql-internal \
 
 # Create Jenkins VM
 gcloud compute instances create jenkins-vm \
-  --zone=us-central1-a \
+  --zone=asia-south1-a \
   --machine-type=e2-medium \
   --image-family=ubuntu-2204-lts \
   --image-project=ubuntu-os-cloud \
@@ -61,7 +65,7 @@ gcloud compute instances create jenkins-vm \
 
 # Create Application VM
 gcloud compute instances create app-vm \
-  --zone=us-central1-a \
+  --zone=asia-south1-a \
   --machine-type=e2-micro \
   --image-family=ubuntu-2204-lts \
   --image-project=ubuntu-os-cloud \
@@ -70,7 +74,7 @@ gcloud compute instances create app-vm \
 
 # Create Database VM
 gcloud compute instances create database-vm \
-  --zone=us-central1-a \
+  --zone=asia-south1-a \
   --machine-type=e2-small \
   --image-family=ubuntu-2204-lts \
   --image-project=ubuntu-os-cloud \
@@ -84,20 +88,20 @@ gcloud compute instances create database-vm \
 # Get all VM IPs
 gcloud compute instances list
 
-# Note down the INTERNAL_IP for each VM:
-# - jenkins-vm: e.g., 10.128.0.2
-# - app-vm: e.g., 10.128.0.3
-# - database-vm: e.g., 10.128.0.4
+# Note down the INTERNAL_IP and EXTERNAL_IP for each VM:
+# - jenkins-vm: INTERNAL_IP=10.160.0.4, EXTERNAL_IP=34.100.238.205
+# - app-vm: INTERNAL_IP=10.160.0.5, EXTERNAL_IP=34.47.142.116
+# - database-vm: INTERNAL_IP=10.160.0.6, EXTERNAL_IP=34.93.141.206
 ```
 
 ## Step 3: Setup Database VM
 
 ```bash
 # SSH into database VM
-gcloud compute ssh database-vm --zone=us-central1-a
+gcloud compute ssh database-vm --zone=asia-south1-a
 
 # Copy and run the setup script
-curl -o database-vm-setup.sh https://raw.githubusercontent.com/Technothinking/Book-Manager/main/deployment/database-vm-setup.sh
+curl -o database-vm-setup.sh https://raw.githubusercontent.com/HarshilForWork/Devops_MINI/main/deployment/database-vm-setup.sh
 chmod +x database-vm-setup.sh
 ./database-vm-setup.sh
 
@@ -117,10 +121,10 @@ exit
 
 ```bash
 # SSH into app VM
-gcloud compute ssh app-vm --zone=us-central1-a
+gcloud compute ssh app-vm --zone=asia-south1-a
 
 # Copy and run the setup script
-curl -o app-vm-setup.sh https://raw.githubusercontent.com/Technothinking/Book-Manager/main/deployment/app-vm-setup.sh
+curl -o app-vm-setup.sh https://raw.githubusercontent.com/HarshilForWork/Devops_MINI/main/deployment/app-vm-setup.sh
 chmod +x app-vm-setup.sh
 ./app-vm-setup.sh
 
@@ -129,12 +133,12 @@ docker run -d \
   --name book_app \
   --restart always \
   -p 5000:5000 \
-  -e MYSQL_HOST=10.128.0.4 \
+  -e MYSQL_HOST=10.160.0.6 \
   -e MYSQL_USER=root \
   -e MYSQL_PASSWORD=Nitish@1234 \
   -e MYSQL_DATABASE=book_db \
   -e SECRET_KEY=your-secret-key-here \
-  gcr.io/YOUR_PROJECT_ID/book-manager-app:latest
+  gcr.io/cosmic-slate-469618-h1/book-manager-app:latest
 
 # Configure Nginx reverse proxy
 sudo nano /etc/nginx/sites-available/book-manager
@@ -163,10 +167,10 @@ exit
 
 ```bash
 # SSH into jenkins VM
-gcloud compute ssh jenkins-vm --zone=us-central1-a
+gcloud compute ssh jenkins-vm --zone=asia-south1-a
 
 # Copy and run the setup script
-curl -o jenkins-vm-setup.sh https://raw.githubusercontent.com/Technothinking/Book-Manager/main/deployment/jenkins-vm-setup.sh
+curl -o jenkins-vm-setup.sh https://raw.githubusercontent.com/HarshilForWork/Devops_MINI/main/deployment/jenkins-vm-setup.sh
 chmod +x jenkins-vm-setup.sh
 ./jenkins-vm-setup.sh
 
@@ -199,7 +203,7 @@ exit
 5. **Create Pipeline**:
    - New Item → Pipeline
    - Pipeline from SCM → Git
-   - Repository: `https://github.com/Technothinking/Book-Manager.git`
+   - Repository: `https://github.com/HarshilForWork/Devops_MINI.git`
    - Script Path: `Jenkinsfile`
 
 ## Step 7: Update Jenkinsfile for GCP
@@ -212,17 +216,17 @@ stage('Deploy to GCP') {
         script {
             // SSH into app-vm and update container
             sh '''
-                gcloud compute ssh app-vm --zone=us-central1-a --command "
-                    docker pull gcr.io/YOUR_PROJECT_ID/book-manager-app:latest
+                gcloud compute ssh app-vm --zone=asia-south1-a --command "
+                    docker pull gcr.io/cosmic-slate-469618-h1/book-manager-app:latest
                     docker stop book_app || true
                     docker rm book_app || true
                     docker run -d --name book_app --restart always \
                       -p 5000:5000 \
-                      -e MYSQL_HOST=10.128.0.4 \
+                      -e MYSQL_HOST=10.160.0.6 \
                       -e MYSQL_USER=root \
                       -e MYSQL_PASSWORD=Nitish@1234 \
                       -e MYSQL_DATABASE=book_db \
-                      gcr.io/YOUR_PROJECT_ID/book-manager-app:latest
+                      gcr.io/cosmic-slate-469618-h1/book-manager-app:latest
                 "
             '''
         }
@@ -241,7 +245,7 @@ Frontend Container → Docker Network → MySQL Container
 ### GCP Production (Multi-VM)
 ```
 Flask Container (App VM) → GCP VPC → MySQL Container (Database VM)
-     (IP: 10.128.0.4:3306)
+  (IP: 10.160.0.6:3306)
 ```
 
 ### Key Points:
@@ -249,20 +253,20 @@ Flask Container (App VM) → GCP VPC → MySQL Container (Database VM)
 2. **VM-to-VM Communication**: Uses GCP's internal network (10.128.0.x)
 3. **Port Exposure Required**: MySQL must expose `-p 3306:3306` so App VM can connect
 4. **Firewall Rules**: GCP firewall must allow port 3306 from app-vm to database-vm
-5. **Environment Variables**: App container gets `MYSQL_HOST=10.128.0.4` (not `db`)
+5. **Environment Variables**: App container gets `MYSQL_HOST=10.160.0.6` (not `db`)
 
 ## Testing Connectivity
 
 ### From App VM, test database connection:
 ```bash
 # SSH to app-vm
-gcloud compute ssh app-vm --zone=us-central1-a
+gcloud compute ssh app-vm --zone=asia-south1-a
 
 # Install MySQL client
 sudo apt-get install -y mysql-client
 
 # Test connection to database VM
-mysql -h 10.128.0.4 -uroot -pNitish@1234 -e "SHOW DATABASES;"
+mysql -h 10.160.0.6 -uroot -pNitish@1234 -e "SHOW DATABASES;"
 
 # Should see: book_db in the list
 ```
@@ -289,8 +293,8 @@ docker logs book_app
 
 # Test connection from inside container
 docker exec -it book_app sh
-ping 10.128.0.4
-nc -zv 10.128.0.4 3306
+ping 10.160.0.6
+nc -zv 10.160.0.6 3306
 ```
 
 ## Cost Estimate (Monthly)

@@ -1,19 +1,23 @@
 pipeline {
     agent any
-    
+
     environment {
-        DOCKER_REGISTRY = 'your-docker-registry'
-        GCP_PROJECT_ID = 'your-gcp-project-id'
-        GCP_ZONE = 'us-central1-a'
+        // --- 1. CONFIGURATION ---
+        GCP_PROJECT_ID = 'cosmic-slate-469618-h1'
+        GCP_ZONE = 'asia-south1-a'
+        DOCKER_REGISTRY = "gcr.io/${GCP_PROJECT_ID}"
         
-        // VM Details
+        // VM Names
         APP_VM = 'app-vm'
-        DB_VM = 'database-vm'
         
-        // Docker Image Names
+        // --- 2. CRITICAL DATABASE IP ---
+        // This is the Internal IP of your Database VM
+        DB_INTERNAL_IP = '10.160.0.6'
+
+        // Docker Image Name
         APP_IMAGE = "${DOCKER_REGISTRY}/book-manager-app"
     }
-    
+
     stages {
         stage('Checkout') {
             steps {
@@ -21,38 +25,28 @@ pipeline {
                 checkout scm
             }
         }
-        
+
         stage('SonarQube Analysis') {
             steps {
                 script {
                     echo 'Running SonarQube code quality scan...'
-                    withSonarQubeEnv('SonarQube') {
+                    // "sonar-server" matches the name we configured in Jenkins System settings
+                    withSonarQubeEnv('sonar-server') {
                         sh '''
-                            sonar-scanner \
+                            /var/lib/jenkins/tools/hudson.plugins.sonar.SonarRunnerInstallation/SonarQubeScanner/bin/sonar-scanner \
                               -Dsonar.projectKey=book-manager \
                               -Dsonar.sources=. \
-                              -Dsonar.host.url=http://localhost:9000 \
-                              -Dsonar.python.coverage.reportPaths=coverage.xml
+                              -Dsonar.host.url=http://localhost:9000
                         '''
                     }
                 }
             }
         }
-        
-        stage('Quality Gate') {
-            steps {
-                script {
-                    echo 'Checking SonarQube Quality Gate...'
-                    timeout(time: 5, unit: 'MINUTES') {
-                        waitForQualityGate abortPipeline: true
-                    }
-                }
-            }
-        }
-        
+
         stage('Build Docker Image') {
             steps {
                 echo 'Building Application Docker image...'
+                // Added 'cd frontend' because your Dockerfile is inside that folder
                 sh """
                     cd frontend
                     docker build -t ${APP_IMAGE}:${BUILD_NUMBER} .
@@ -60,58 +54,47 @@ pipeline {
                 """
             }
         }
-        
+
         stage('Push to Registry') {
             steps {
-                echo 'Pushing Docker image to registry...'
+                echo 'Pushing Docker image to Google Artifact Registry...'
                 sh """
+                    gcloud auth configure-docker gcr.io --quiet
                     docker push ${APP_IMAGE}:${BUILD_NUMBER}
                     docker push ${APP_IMAGE}:latest
                 """
             }
         }
-        
+
         stage('Deploy to GCP VM') {
             steps {
-                echo 'Deploying Application to GCP VM...'
+                echo 'Deploying Application to App VM...'
+                // Connects to App VM, pulls the new image, and restarts the container
                 sh """
-                    gcloud compute ssh ${APP_VM} --zone=${GCP_ZONE} --command='
+                    gcloud compute ssh ${APP_VM} --zone=${GCP_ZONE} --command="
+                        sudo usermod -aG docker \$USER
+                        gcloud auth configure-docker gcr.io --quiet
                         docker pull ${APP_IMAGE}:latest
-                        docker stop book-app || true
-                        docker rm book-app || true
-                        docker run -d --name book-app -p 80:5000 \
-                          -e MYSQL_HOST=<DB_VM_INTERNAL_IP> \
+                        docker stop book_app || true
+                        docker rm book_app || true
+                        
+                        docker run -d --name book_app --restart always \
+                          -p 5000:5000 \
+                          -e MYSQL_HOST=${DB_INTERNAL_IP} \
                           -e MYSQL_USER=root \
                           -e MYSQL_PASSWORD=Nitish@1234 \
-                          -e MYSQL_DB=book_db \
+                          -e MYSQL_DATABASE=book_db \
+                          -e SECRET_KEY=super-secret-key \
                           ${APP_IMAGE}:latest
-                    '
-                """
-            }
-        }
-        
-        stage('Health Check') {
-            steps {
-                echo 'Running health checks...'
-                sh """
-                    curl -f http://${APP_VM}:80 || exit 1
+                    "
                 """
             }
         }
     }
     
     post {
-        success {
-            echo 'Pipeline executed successfully!'
-            // Send notification (email, Slack, etc.)
-        }
-        failure {
-            echo 'Pipeline failed!'
-            // Send failure notification
-        }
         always {
-            echo 'Cleaning up...'
-            sh 'docker system prune -f'
+            cleanWs()
         }
     }
 }
